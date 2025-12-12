@@ -24,3 +24,4 @@ export const API_ENDPOINTS = {
   USERS: `${API_BASE_URL}/api/users`,
   USER_BY_ID: (id) => `${API_BASE_URL}/api/users/${id}`,
 };
+

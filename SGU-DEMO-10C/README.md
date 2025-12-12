@@ -121,11 +121,12 @@ El pipeline realizará:
 ## Acceso a la Aplicación
 
 - **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8080/api/users
-- **Base de datos**: localhost:3306
+- **Backend API**: http://localhost:8081/api/users
+- **Base de datos**: localhost:3307
 
 ## Notas
 
 - La base de datos se inicializa automáticamente al iniciar el contenedor
 - El backend espera a que la base de datos esté lista antes de iniciar
 - El frontend se comunica con el backend a través de la red Docker
+

@@ -9,3 +9,4 @@ public class SguApplication {
         SpringApplication.run(SguApplication.class, args);
     }
 }
+

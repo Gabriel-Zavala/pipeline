@@ -17,8 +17,8 @@ pipeline {
         stage('Build Backend') {
             steps {
                 echo 'Construyendo imagen del backend...'
-                dir('backend') {
-                    sh 'docker build -t server:1.0-sgu .'
+                dir('SGU-DEMO-10C/backend') {
+                    bat 'docker build -t server:1.0-sgu .'
                 }
             }
         }
@@ -26,8 +26,8 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 echo 'Construyendo imagen del frontend...'
-                dir('frontend') {
-                    sh 'docker build -t client:1.0-sgu .'
+                dir('SGU-DEMO-10C/frontend') {
+                    bat 'docker build -t client:1.0-sgu .'
                 }
             }
         }
@@ -35,26 +35,29 @@ pipeline {
         stage('Stop Previous Containers') {
             steps {
                 echo 'Deteniendo contenedores anteriores...'
-                sh '''
-                    ${DOCKER_COMPOSE} down || true
-                '''
+                dir('SGU-DEMO-10C') {
+                    bat '''
+                        docker-compose down
+                        if errorlevel 1 exit 0
+                    '''
+                }
             }
         }
 
         stage('Start Services') {
             steps {
                 echo 'Iniciando servicios con docker-compose...'
-                sh '''
-                    ${DOCKER_COMPOSE} up -d
-                '''
+                dir('SGU-DEMO-10C') {
+                    bat 'docker-compose up -d'
+                }
             }
         }
 
         stage('Wait for Services') {
             steps {
                 echo 'Esperando a que los servicios estén listos...'
-                sh '''
-                    sleep 30
+                bat '''
+                    timeout /t 30 /nobreak
                     docker ps
                 '''
             }
@@ -63,17 +66,16 @@ pipeline {
         stage('Health Check') {
             steps {
                 echo 'Verificando salud de los servicios...'
-                sh '''
-                    # Verificar que los contenedores estén corriendo
-                    docker ps | grep sgu-backend || exit 1
-                    docker ps | grep sgu-frontend || exit 1
-                    docker ps | grep sgu-database || exit 1
-                    
-                    # Esperar un poco más para que el backend esté completamente listo
-                    sleep 10
-                    
-                    # Verificar que el backend responda
-                    curl -f http://localhost:8080/api/users || echo "Backend aún no está listo, pero continuando..."
+                bat '''
+                    docker ps | findstr sgu-backend
+                    if errorlevel 1 exit 1
+                    docker ps | findstr sgu-frontend
+                    if errorlevel 1 exit 1
+                    docker ps | findstr sgu-database
+                    if errorlevel 1 exit 1
+                    timeout /t 10 /nobreak
+                    curl -f http://localhost:8081/api/users
+                    if errorlevel 1 echo Backend aún no está listo, pero continuando...
                 '''
             }
         }
@@ -84,14 +86,17 @@ pipeline {
             echo 'Pipeline ejecutado exitosamente!'
             echo 'Servicios disponibles en:'
             echo '  - Frontend: http://localhost:3000'
-            echo '  - Backend: http://localhost:8080'
+            echo '  - Backend: http://localhost:8081'
         }
         failure {
             echo 'Pipeline falló. Revisa los logs para más detalles.'
-            sh '${DOCKER_COMPOSE} logs'
+            dir('SGU-DEMO-10C') {
+                bat 'docker-compose logs'
+            }
         }
         always {
             echo 'Limpiando archivos temporales...'
         }
     }
 }
+

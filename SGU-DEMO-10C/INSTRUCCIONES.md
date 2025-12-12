@@ -175,3 +175,4 @@ docker rmi server:1.0-sgu client:1.0-sgu
 - **Cambia el nombre de la carpeta**: Si tu proyecto debe llamarse diferente (ej: `SGU-TUS_INICIALES-10X`), renombra la carpeta antes de hacer el commit inicial
 - **Credenciales de base de datos**: Las credenciales por defecto son `root/rootpassword`. Cámbialas en producción
 - **Puertos**: Si los puertos 3000, 8080 o 3306 están en uso, modifica `docker-compose.yml`
+
