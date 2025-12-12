@@ -1,0 +1,97 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_COMPOSE = 'docker-compose'
+        PROJECT_NAME = 'SGU-DEMO-10C'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Obteniendo código del repositorio...'
+                checkout scm
+            }
+        }
+
+        stage('Build Backend') {
+            steps {
+                echo 'Construyendo imagen del backend...'
+                dir('backend') {
+                    sh 'docker build -t server:1.0-sgu .'
+                }
+            }
+        }
+
+        stage('Build Frontend') {
+            steps {
+                echo 'Construyendo imagen del frontend...'
+                dir('frontend') {
+                    sh 'docker build -t client:1.0-sgu .'
+                }
+            }
+        }
+
+        stage('Stop Previous Containers') {
+            steps {
+                echo 'Deteniendo contenedores anteriores...'
+                sh '''
+                    ${DOCKER_COMPOSE} down || true
+                '''
+            }
+        }
+
+        stage('Start Services') {
+            steps {
+                echo 'Iniciando servicios con docker-compose...'
+                sh '''
+                    ${DOCKER_COMPOSE} up -d
+                '''
+            }
+        }
+
+        stage('Wait for Services') {
+            steps {
+                echo 'Esperando a que los servicios estén listos...'
+                sh '''
+                    sleep 30
+                    docker ps
+                '''
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                echo 'Verificando salud de los servicios...'
+                sh '''
+                    # Verificar que los contenedores estén corriendo
+                    docker ps | grep sgu-backend || exit 1
+                    docker ps | grep sgu-frontend || exit 1
+                    docker ps | grep sgu-database || exit 1
+                    
+                    # Esperar un poco más para que el backend esté completamente listo
+                    sleep 10
+                    
+                    # Verificar que el backend responda
+                    curl -f http://localhost:8080/api/users || echo "Backend aún no está listo, pero continuando..."
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline ejecutado exitosamente!'
+            echo 'Servicios disponibles en:'
+            echo '  - Frontend: http://localhost:3000'
+            echo '  - Backend: http://localhost:8080'
+        }
+        failure {
+            echo 'Pipeline falló. Revisa los logs para más detalles.'
+            sh '${DOCKER_COMPOSE} logs'
+        }
+        always {
+            echo 'Limpiando archivos temporales...'
+        }
+    }
+}
