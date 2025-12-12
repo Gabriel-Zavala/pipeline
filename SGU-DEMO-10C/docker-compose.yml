@@ -30,10 +30,15 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://database:3306/sgu_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: rootpassword
+      SERVER_SSL_ENABLED: true
+      SERVER_SSL_KEYSTORE: /etc/letsencrypt/live/localhost/keystore.p12
+      SERVER_SSL_KEYSTORE_PASS: changeit
     networks:
       - sgu-net
     ports:
       - "8081:8080"
+    volumes:
+      - certbot-conf:/etc/letsencrypt:ro
     restart: unless-stopped
 
   frontend:
@@ -48,6 +53,9 @@ services:
       - sgu-net
     ports:
       - "3000:80"
+      - "3001:443"
+    volumes:
+      - certbot-conf:/etc/letsencrypt:ro
     restart: unless-stopped
 
 networks:
@@ -57,4 +65,6 @@ networks:
 volumes:
   sgu-volume:
     driver: local
+  certbot-conf:
+    external: true
 
